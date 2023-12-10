@@ -10,7 +10,6 @@ The following software tools are required to run the pipeline:
 - [Beagle](https://faculty.washington.edu/browning/beagle/) - (beagle.r1399.jar)
 - [BCFtools](http://samtools.github.io/bcftools/)
 - [Java](https://www.oracle.com/java/technologies/javase-downloads.html)
-- [Rscript](https://www.r-project.org/) R4
 
 #Usage
 ./imputation_pipeline.sh -p /path/to/plink -r reference_panel -o /path/to/output -i /path/to/input -t target_panel -B /path/to/beagle.jar -b /path/to/bcftools
