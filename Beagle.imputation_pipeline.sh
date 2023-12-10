@@ -90,8 +90,8 @@ check_duplicated_markers() {
   for i in $(cat "$outputdir/chr"); do
     $plink./plink --bfile "$outputdir/$ref.FILTERED.NODUP" --chr "$i" --recode vcf --out "$outputdir/$ref.FILTERED.$i"
     $plink./plink --bfile "$outputdir/$target.FILTERED.NODUP" --chr "$i" --recode vcf --out "$outputdir/$target.FILTERED.$i"
-    #java -jar "$beagle" nthreads=2 gt="$outputdir/$ref.FILTERED.$i.vcf" out="$outputdir/$ref.FILTERED.pahsed.$i.vcf"
-    #java -jar "$beagle" nthreads=2 gt="$outputdir/$target.FILTERED.$i.vcf" ref="$outputdir/$ref.FILTERED.pahsed.$i.vcf.vcf.gz" out="$outputdir/$target.FILTERED.$i.imputed.vcf"
+    java -jar "$beagle" nthreads=2 gt="$outputdir/$ref.FILTERED.$i.vcf" out="$outputdir/$ref.FILTERED.pahsed.$i.vcf"
+    java -jar "$beagle" nthreads=2 gt="$outputdir/$target.FILTERED.$i.vcf" ref="$outputdir/$ref.FILTERED.pahsed.$i.vcf.vcf.gz" out="$outputdir/$target.FILTERED.$i.imputed.vcf"
   done
 
   # Index and extract statistics for imputed VCF files
