@@ -42,6 +42,7 @@ check_dependencies() {
 }
 
 
+cat $inputPath/$ref.bim |awk '{print $1}' |sort -u > $outputdir/chr
 
 # Function to filter panels
 filter_panel() {
@@ -55,17 +56,28 @@ filter_panel() {
     --allow-extra-chr --chr 1-18 --mind 0.1 --geno 0.1 --maf 0.01 --hwe 0.00001 --make-bed --out "$output_dir/$panel.FILTERED"
 }
 
+
 # Function to check duplicated markers
 check_duplicated_markers() {
   local file_plink_format="$1"
   local output_dir="$2"
   local plink_cmd="$3"
 
-  # ... (rest of the duplicated markers code) ...
+  # Create a file with markers and their tags
+  awk '{print $1"#"$4" "$2}' $output_dir/$file_plink_format.bim > $output_dir/$file_plink_format.all.markers.tags.txt
+
+  # Identify duplicated markers
+  awk '{print $1"#"$4}' $output_dir/$file_plink_format.bim | uniq -c |awk '{if ($1>1) print $2}' > $output_dir/$file_plink_format.dup.markers.tags.txt
+
+  # Extract the markers to be excluded
+  while read -r marker; do
+    grep -w "$marker" "$output_dir/$file_plink_format.all.markers.tags.txt"
+  done < "$output_dir/$file_plink_format.dup.markers.tags.txt" | awk '{print $2}' | sort -u > "$output_dir/$file_plink_format.exclude.txt"
+
+  # Use PLINK to exclude duplicated markers
+  $plink_cmd --bfile $output_dir/$file_plink_format --exclude $output_dir/$file_plink_format.exclude.txt --make-bed --out "$output_dir/$file_plink_format.NODUP"
 }
 
-# Redirect stdout and stderr to a log file
-{
   echo "======== Start of Pipeline Log $(date) ========"
   echo "plinkPath: $plink"
   echo "reference: $ref"
@@ -75,16 +87,14 @@ check_duplicated_markers() {
   echo "Beagle: $beagle"
   echo "bcftoolsPath: $bcftools_path"
 
-  # Check dependencies
-  check_dependencies
 
   # Filter panels
-  filter_panel "$ref" "$outputdir/$ref" "$plink"
-  filter_panel "$target" "$outputdir/$target" "$plink"
+  filter_panel "$ref" "$outputdir" "$plink"
+  filter_panel "$target" "$outputdir" "$plink"
 
   # Usage example for target and reference panels
-  check_duplicated_markers "$target.FILTERED" "$outputdir" "$plink./plink"
   check_duplicated_markers "$ref.FILTERED" "$outputdir" "$plink./plink"
+  check_duplicated_markers "$target.FILTERED" "$outputdir" "$plink./plink"
 
   # Work on each chromosome separately and recode as VCF. then phasing reference panels and imputation using Beagle
   for i in $(cat "$outputdir/chr"); do
@@ -106,6 +116,9 @@ check_duplicated_markers() {
   done > "$outputdir/$target.stat.all.txt"
 
   # Generate MAF|DR2 plot and filter markers based on DR2 threshold
+
+cp plots.stats.bcftools.R $outputdir/
+
   /sw_results/tools/R-4.2.2/bin/Rscript \
     "$outputdir/plots.stats.bcftools.R" \
     "$outputdir/$target.stat.all.txt" 0.6 "$outputdir/$target.beagleSTAT.txt" "$outputdir/corr.plot"
